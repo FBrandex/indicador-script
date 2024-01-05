@@ -1,11 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Função para adicionar o parâmetro 'indicador' à URL
     function addIndicatorParameter(url) {
-        var indicator = new URLSearchParams(window.location.search).get('indicador');
+        var variable = new URLSearchParams(window.location.search).get('mapKey');
+        var indicator = new URLSearchParams(window.location.search).get(variable);
         if (!indicator) return url;
 
         var newUrl = new URL(url, window.location.origin);
-        newUrl.searchParams.set('indicador', indicator);
+        newUrl.searchParams.set(variable, indicator);
         return newUrl.href;
     }
 
