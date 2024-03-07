@@ -1,35 +1,61 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Função para adicionar o parâmetro 'indicador' à URL
-    function addIndicatorParameter(url) {
-        var variable = new URLSearchParams(window.location.search).get('mapKey');
-        var indicator = new URLSearchParams(window.location.search).get(variable);
-        if (!indicator) return url;
-
-        var newUrl = new URL(url, window.location.origin);
-        newUrl.searchParams.set(variable, indicator);
-        return newUrl.href;
-    }
-
-    // Função para tratar o clique
-    function handleLinkClick(event) {
-        var target = event.target;
-
-        // Encontrar o elemento <a> ou <button> mais próximo
-        while (target && target.nodeName !== 'A' && target.nodeName !== 'BUTTON') {
-            target = target.parentNode;
+(function () {
+    document.addEventListener('DOMContentLoaded', function () {
+        // Função para extrair as query strings e formatá-las
+        function getFormattedQueryStrings() {
+            const params = new URLSearchParams(window.location.search);
+            let queryStringParts = [];
+            params.forEach((value, key) => {
+                queryStringParts.push(`${key}=${value}`);
+            });
+            return queryStringParts.join('&');
         }
 
-        if (target) {
-            var destinationUrl = target.nodeName === 'A' ? target.href : target.getAttribute('data-href');
-            if (destinationUrl) {
-                event.preventDefault();
-                window.location.href = addIndicatorParameter(destinationUrl);
+        // Capturando as query strings formatadas
+        const formattedQueryStrings = getFormattedQueryStrings();
+        const encodedQueryStrings = encodeURIComponent(formattedQueryStrings);
+
+        // Função para adicionar query strings aos links
+        function updateLinkHref(link, isHotmart) {
+            const originalHref = link.getAttribute('href');
+            const separator = originalHref.includes('?') ? '&' : '?';
+            const newHref = isHotmart ?
+                originalHref + separator + 'xcod=' + encodedQueryStrings :
+                originalHref + separator + formattedQueryStrings;
+            link.setAttribute('href', newHref);
+        }
+
+        // Função para adicionar campos aos formulários
+        function addInputsToForm(form, isHotmart) {
+            if (isHotmart) {
+                if (!form.querySelector('input[name="xcod"]')) {
+                    const xcodInput = document.createElement('input');
+                    xcodInput.type = 'hidden';
+                    xcodInput.name = 'xcod';
+                    xcodInput.value = encodedQueryStrings;
+                    form.appendChild(xcodInput);
+                }
+            } else {
+                new URLSearchParams(formattedQueryStrings).forEach((value, key) => {
+                    if (!form.querySelector(`input[name="${key}"]`)) {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = key;
+                        input.value = value;
+                        form.appendChild(input);
+                    }
+                });
             }
         }
-    }
 
-    // Adiciona o event listener a todos os links e botões
-    document.querySelectorAll('a, button').forEach(function(element) {
-        element.addEventListener('click', handleLinkClick);
+        // Atualizar links e formulários
+        document.querySelectorAll('a').forEach(link => {
+            const isHotmartLink = link.href.includes('pay.hotmart.com');
+            updateLinkHref(link, isHotmartLink);
+        });
+
+        document.querySelectorAll('form').forEach(form => {
+            const isHotmartForm = form.action.includes('pay.hotmart.com');
+            addInputsToForm(form, isHotmartForm);
+        });
     });
-});
+})();
